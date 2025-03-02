@@ -29,3 +29,11 @@ manifest xmlns:android="http://schemas.android.com/apk/res/android"
         </activity>
 
         <!-- Secondary Activities (Remove LAUNCHER category from these) -->
+         <activity
+            android:name="Movie"
+            android:exported="true"
+            android:label="@string/app_name"
+            tools:ignore="MissingClass" />
+
+    </application>
+
