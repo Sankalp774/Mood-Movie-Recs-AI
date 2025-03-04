@@ -6,4 +6,9 @@ Processing AI-powered recommendations.
 Handling API requests and responses.
 Implementing authentication and security measures.
 
-
+2. Tech Stack
+Backend Framework: Flask / Django / FastAPI (Choose based on preference)
+Database: PostgreSQL / Firebase Firestore / MongoDB
+AI Models: TensorFlow, PyTorch, Scikit-learn, Hugging Face Transformers
+APIs: TMDB API (for movie data), OpenAI GPT (for review analysis)
+Hosting & Deployment: Firebase Functions / AWS Lambda / Heroku / Render
