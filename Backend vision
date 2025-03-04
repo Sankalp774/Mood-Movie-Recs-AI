@@ -22,3 +22,7 @@ Example: A KNN-based or matrix factorization model (SVD, ALS).
 2. Mood-Based Recommendations
 Uses sentiment analysis and NLP to match movies to moods.
 Example: BERT-based classification model assigns moods to movies.
+
+3. Discovery Feed
+Fetches trending movies, festival winners, and hidden gems from APIs.
+Uses AI to highlight "movies you may have missed."
