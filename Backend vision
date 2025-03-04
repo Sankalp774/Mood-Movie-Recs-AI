@@ -18,3 +18,7 @@ Hosting & Deployment: Firebase Functions / AWS Lambda / Heroku / Render
 Uses collaborative filtering and content-based filtering to suggest movies.
 Model trains on user interactions (likes, ratings, watch history).
 Example: A KNN-based or matrix factorization model (SVD, ALS).
+
+2. Mood-Based Recommendations
+Uses sentiment analysis and NLP to match movies to moods.
+Example: BERT-based classification model assigns moods to movies.
