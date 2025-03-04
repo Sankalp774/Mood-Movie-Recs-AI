@@ -1,1 +1,9 @@
+1. Overview
+The backend serves as the core engine that processes user data, interacts with AI models, and delivers personalized movie recommendations. It is responsible for:
+
+Storing and managing user data and movie preferences.
+Processing AI-powered recommendations.
+Handling API requests and responses.
+Implementing authentication and security measures.
+
 
