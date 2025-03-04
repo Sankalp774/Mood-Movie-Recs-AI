@@ -1,4 +1,4 @@
-1. Overview
+#Overview
 The backend serves as the core engine that processes user data, interacts with AI models, and delivers personalized movie recommendations. It is responsible for:
 
 Storing and managing user data and movie preferences.
@@ -6,14 +6,14 @@ Processing AI-powered recommendations.
 Handling API requests and responses.
 Implementing authentication and security measures.
 
-2. Tech Stack
+#Tech Stack
 Backend Framework: Flask / Django / FastAPI (Choose based on preference)
 Database: PostgreSQL / Firebase Firestore / MongoDB
 AI Models: TensorFlow, PyTorch, Scikit-learn, Hugging Face Transformers
 APIs: TMDB API (for movie data), OpenAI GPT (for review analysis)
 Hosting & Deployment: Firebase Functions / AWS Lambda / Heroku / Render
 
-3. AI Features Integration
+#AI Features Integration
 1. Personalized Recommendations
 Uses collaborative filtering and content-based filtering to suggest movies.
 Model trains on user interactions (likes, ratings, watch history).
