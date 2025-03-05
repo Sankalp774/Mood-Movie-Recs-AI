@@ -17,6 +17,7 @@
 
         <!-- Main Activity (Only ONE LAUNCHER activity needed) -->
 
+  
      activity
             android:name="com.example.imdbclone.MainActivity"
             android:exported="true"
