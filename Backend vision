@@ -26,3 +26,7 @@ Example: BERT-based classification model assigns moods to movies.
 3. Discovery Feed
 Fetches trending movies, festival winners, and hidden gems from APIs.
 Uses AI to highlight "movies you may have missed."
+
+4. Review Analysis
+NLP model (e.g., BERT, GPT) analyzes user reviews.
+Extracts sentiment, keywords, and themes to improve recommendations.
