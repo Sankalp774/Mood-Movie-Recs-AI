@@ -1,6 +1,7 @@
 package com.example.imdbclone
 
 import android.os.Bundle
+import android.R
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
