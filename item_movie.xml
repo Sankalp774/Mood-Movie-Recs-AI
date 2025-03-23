@@ -21,7 +21,7 @@
         android:layout_weight="1"
         android:orientation="vertical"
         android:paddingStart="16dp">
-
+ 
         <!-- All TextViews have both attributes -->
         <TextView
             android:id="@+id/tvTitle"
