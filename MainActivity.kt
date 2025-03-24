@@ -15,7 +15,7 @@ import com.example.imdbclone.ui.theme.IMDBCloneTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        super.onCreate(savedInstanceState) 
         setContent {
             IMDBCloneTheme {
                 // A surface container using the 'background' color from the theme 
