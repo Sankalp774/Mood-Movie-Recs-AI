@@ -28,8 +28,7 @@
             android:layout_height="wrap_content" />
 
         <TextView
-            android:id="@+id/tvRating"
-            android:layout_width="match_parent"
+            a
             android:layout_height="wrap_content" />
 
  
