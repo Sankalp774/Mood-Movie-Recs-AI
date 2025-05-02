@@ -1,14 +1,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-}
-
-android {
-    defaultConfig {
-        applicationId = "com.amazon.myfirstapp"
-        minSdk = 24
-        targetSdk = 34
-        versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
