@@ -4,9 +4,6 @@ plugins {
 }
 
 android {
-    namespace = "com.amazon.myfirstapp"
-    compileSdk = 34
- 
     defaultConfig {
         applicationId = "com.amazon.myfirstapp"
         minSdk = 24
