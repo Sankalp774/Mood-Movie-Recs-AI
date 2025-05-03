@@ -7,6 +7,4 @@ data class Movie(
     val rating: Float,
     val genre: String,
     val description: String, 
-    val imageResId: Int  
-    // We'll use local images for now
 )
