@@ -2,4 +2,4 @@ package com.example.imdbclone
 
 data class Movie(
     val id: Int,
-    val title: Strin
+    val title: Str
