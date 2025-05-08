@@ -1,4 +1,4 @@
-package com.example.imdbclone
+ package com.example.imdbclone
 
 import android.os.Bundle
 import android.R
