@@ -1,4 +1,4 @@
-   package com.example.imdbclone
+    package com.example.imdbclone
 
 data class Movie(
     val id: Int,     
