@@ -1,42 +1,66 @@
-# Mood Movie Recs — Android skeleton (WIP)
+# Mood Movie Recs — Content-Based Recommender
 
-**Honest status:** early **Kotlin / Jetpack Compose** Android scaffold for a movie app idea.  
-This repository is **not** a finished AI recommendation product.
+**Real ML recommender** (not a vaporware pitch):
 
-## What is actually in the repo
+- TF-IDF over title + genres + **mood tags** + overview  
+- Cosine similarity ranking  
+- Offline self-retrieval metrics (Hit@1 / Hit@3 / mean rank)  
+- CLI + Gradio UI  
+- Kotlin stubs kept as mobile exploration notes  
 
-| File | Role |
-|------|------|
-| `MainActivity.kt` | Compose entry (`Greeting` placeholder) |
-| `Movie.kt` | Incomplete `Movie` data class draft |
-| `AndroidManifest.xml` | Manifest stub |
-| `LICENSE` | License |
+```text
+user mood / query → vectorize → cosine sim → top-k movies
+```
 
-There is **no** trained recommender, no backend, and no full IMDb-clone feature set in this code.
+## Quickstart
 
-## Original product vision (future work)
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 
-Ideas explored in planning (not implemented here):
+# CLI
+python -m recommender.app --mood "tense dark" --top-k 5
 
-- Mood-based movie discovery  
-- Personalized recommendations  
-- Social / watch-party concepts  
+# Metrics
+python -m recommender.app --eval
 
-Those belong in a full Android Studio project with modules, networking, and ML — not yet shipped in this repo.
+# UI
+python -m recommender.app --ui
+```
 
-## How to treat this for hiring
+## Evaluation
 
-- **Do not** list as “AI recommendation system” on resume until features exist.  
-- Safe label: *Android Compose learning project / WIP movie app shell*.  
-- Prefer leading with **RefactorAI**, **Legal Contract Analyzer**, or **PlanifyAI** for Applied AI roles.
+`python -m recommender.app --eval` writes `metrics/eval_report.json`:
 
-## Next implementation steps (if continued)
+| Metric | Meaning |
+|--------|---------|
+| hit_at_1 | Fraction of movies retrieving themselves as #1 from overview |
+| hit_at_3 | Self in top-3 |
+| mean_rank | Average self-rank (lower is better) |
 
-1. Open as a full Android Studio project (Gradle modules)  
-2. Fix `Movie` model and list UI  
-3. Add a public movies API client  
-4. Add a simple content-based or collaborative filter **with evaluation**  
+This is a **sanity/retrieval** check on a small catalog — not offline MovieLens SOTA.
 
-## License
+## Layout
 
-See `LICENSE`.
+```text
+recommender/
+  engine.py
+  app.py
+  data/movies.csv
+MainActivity.kt / Movie.kt   # Android skeleton (secondary)
+metrics/                     # generated
+```
+
+## Interview narrative
+
+> Built a content-based recommender with explicit mood features, measured ranking quality with self-retrieval metrics, and shipped CLI/UI — instead of claiming an unfinished “AI social movie network.”
+
+## Next upgrades
+
+- Collaborative filtering on MovieLens  
+- Two-tower embeddings  
+- Full Android client consuming `/recommend` API  
+
+## Author
+
+Sankalp Sahu
