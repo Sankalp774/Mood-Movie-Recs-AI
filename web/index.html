@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mood Movie Recs — AI mood-based discovery</title>
+  <meta name="description" content="Discover films by mood with a content-based AI recommender. Like, rate, and build a watchlist." />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎬%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="brand-badge">🎬</div>
+        <div>Mood Movie Recs</div>
+      </div>
+      <nav class="nav-links">
+        <a href="#discover">Discover</a>
+        <a href="#recs">For you</a>
+        <a href="#watchlist">Watchlist</a>
+        <a href="#liked">Liked</a>
+        <a href="#how">How it works</a>
+        <span class="api-pill" id="api-pill">…</span>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="eyebrow">AI · content-based recommender · mood-first</div>
+          <h1>Find your next film by <span>how you feel</span></h1>
+          <p class="lead">
+            Pick a mood, refine with a free-text vibe, like what you love —
+            the model re-ranks a curated catalog using TF-IDF + cosine similarity
+            over genres, mood tags, and overviews.
+          </p>
+          <div class="stat-row">
+            <div class="stat"><b id="stat-movies">—</b><span>films in catalog</span></div>
+            <div class="stat"><b id="stat-moods">—</b><span>mood channels</span></div>
+            <div class="stat"><b>TF-IDF</b><span>ranking engine</span></div>
+          </div>
+        </div>
+        <div class="hero-card">
+          <strong>Tonight’s protocol</strong>
+          <p class="lead" style="margin:0.5rem 0 0;font-size:0.95rem">
+            1) Tap a mood<br />
+            2) Optional: describe a vibe (“rainy night heist”)<br />
+            3) Heart films you like — recommendations adapt<br />
+            4) Save a watchlist for later
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="panel" id="discover">
+        <h2>How are you feeling?</h2>
+        <div class="moods" id="moods"></div>
+        <div class="search-row">
+          <input id="query" type="search" placeholder='Optional vibe — e.g. "slow burn sci-fi with hope"' />
+          <button class="btn" id="btn-rec" type="button">Get recommendations</button>
+          <button class="btn secondary" id="btn-clear" type="button">Clear query</button>
+        </div>
+      </div>
+
+      <section id="recs">
+        <div class="section-head">
+          <div>
+            <h2>Recommended for this mood</h2>
+            <p id="recs-sub">Personalized ranking</p>
+          </div>
+        </div>
+        <div class="grid" id="recs"></div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Discovery feed</h2>
+            <p>Highly rated picks from the catalog</p>
+          </div>
+        </div>
+        <div class="grid" id="feed"></div>
+      </section>
+
+      <section id="watchlist">
+        <div class="section-head">
+          <div>
+            <h2>Your watchlist</h2>
+            <p>Stored locally in this browser</p>
+          </div>
+        </div>
+        <div class="grid" id="watchlist"></div>
+      </section>
+
+      <section id="liked">
+        <div class="section-head">
+          <div>
+            <h2>Liked films</h2>
+            <p>Used to personalize rankings</p>
+          </div>
+        </div>
+        <div class="grid" id="liked"></div>
+      </section>
+
+      <section id="how" class="panel" style="margin-top:1rem">
+        <h2>How the AI works</h2>
+        <p class="lead" style="margin:0;font-size:0.95rem">
+          Each movie is turned into a text document: <em>title + genres + mood tags + overview</em>.
+          We build a <strong>TF-IDF</strong> vector space and rank by <strong>cosine similarity</strong>
+          to your mood / free-text query, lightly blending catalog quality scores.
+          Likes inject those films’ profiles into the query (content-based personalization).
+          Offline self-retrieval metrics ship with the Python engine (<code>/api/eval</code> or <code>python -m eval.run_eval</code>).
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>
+        Built by <strong>Sankalp Sahu</strong> · Applied AI portfolio ·
+        <a href="https://github.com/Sankalp774/Mood-Movie-Recs-AI">Source on GitHub</a>
+      </p>
+      <p>Educational demo. Posters via TMDB image CDN; movie data is a curated demo catalog.</p>
+    </div>
+  </footer>
+
+  <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true">
+    <div class="modal" id="modal-body"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="./assets/app.js" data-base="./"></script>
+</body>
+</html>
