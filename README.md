@@ -1,7 +1,7 @@
 # Mood Movie Recs
 
 > **Created:** (2025-02-28)  
-> **Latest update:** OpenCV facial expression mood detection · match loading bar · 4:3 liquid-glass Netflix-style card stack (linked-list navigation) · TF-IDF recommender SPA + FastAPI  
+> **Latest update:** (2026-07-22) — OpenCV face mood · Netflix horizontal rows · match stack · backend port 8012
 
 **Academic stage:** 3rd year → product rebuild  
 **Learning focus:** Recommender systems · OpenCV face/expression pipeline · full-stack UX · content-based IR
