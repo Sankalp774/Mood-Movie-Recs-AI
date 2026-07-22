@@ -610,6 +610,18 @@ async function init() {
   document.getElementById("btn-open-stack").onclick = () => openStack(0);
   document.getElementById("btn-cam").onclick = enableCamera;
   document.getElementById("btn-scan").onclick = scanExpression;
+
+  // Netflix-style horizontal row scroll buttons
+  document.querySelectorAll(".row-scroll-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-scroll");
+      const dir = Number(btn.getAttribute("data-dir") || 1);
+      const row = document.getElementById(id);
+      if (!row) return;
+      const step = Math.max(row.clientWidth * 0.75, 240);
+      row.scrollBy({ left: dir * step, behavior: "smooth" });
+    });
+  });
   document.getElementById("stack-prev").onclick = () => stackGo(-1);
   document.getElementById("stack-next").onclick = () => stackGo(1);
   document.getElementById("stack-close").onclick = closeStack;

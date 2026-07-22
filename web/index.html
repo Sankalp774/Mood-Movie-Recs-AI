@@ -99,27 +99,39 @@
           </div>
           <button class="btn secondary" id="btn-open-stack" type="button">Open match stack</button>
         </div>
-        <div class="grid" id="recs"></div>
+        <div class="row-wrap">
+          <button type="button" class="row-scroll-btn prev" data-scroll="recs" data-dir="-1" aria-label="Scroll left">‹</button>
+          <div class="grid" id="recs"></div>
+          <button type="button" class="row-scroll-btn next" data-scroll="recs" data-dir="1" aria-label="Scroll right">›</button>
+        </div>
       </section>
 
       <section>
         <div class="section-head">
           <div>
             <h2>Discovery feed</h2>
-            <p>Highly rated picks from the catalog</p>
+            <p>Highly rated picks · scroll sideways like Netflix</p>
           </div>
         </div>
-        <div class="grid" id="feed"></div>
+        <div class="row-wrap">
+          <button type="button" class="row-scroll-btn prev" data-scroll="feed" data-dir="-1" aria-label="Scroll left">‹</button>
+          <div class="grid" id="feed"></div>
+          <button type="button" class="row-scroll-btn next" data-scroll="feed" data-dir="1" aria-label="Scroll right">›</button>
+        </div>
       </section>
 
       <section id="watchlist">
         <div class="section-head">
           <div>
             <h2>Your watchlist</h2>
-            <p>Stored locally in this browser</p>
+            <p>Stored locally · horizontal row</p>
           </div>
         </div>
-        <div class="grid" id="watchlist"></div>
+        <div class="row-wrap">
+          <button type="button" class="row-scroll-btn prev" data-scroll="watchlist" data-dir="-1" aria-label="Scroll left">‹</button>
+          <div class="grid" id="watchlist"></div>
+          <button type="button" class="row-scroll-btn next" data-scroll="watchlist" data-dir="1" aria-label="Scroll right">›</button>
+        </div>
       </section>
 
       <section id="liked">
@@ -129,7 +141,11 @@
             <p>Used to personalize rankings</p>
           </div>
         </div>
-        <div class="grid" id="liked"></div>
+        <div class="row-wrap">
+          <button type="button" class="row-scroll-btn prev" data-scroll="liked" data-dir="-1" aria-label="Scroll left">‹</button>
+          <div class="grid" id="liked"></div>
+          <button type="button" class="row-scroll-btn next" data-scroll="liked" data-dir="1" aria-label="Scroll right">›</button>
+        </div>
       </section>
 
       <section id="how" class="panel" style="margin-top:1rem">
