@@ -1,7 +1,7 @@
 """
 Mood Movie Recs — FastAPI backend + static web host.
 
-  uvicorn backend.app.main:app --reload --port 8000
+  uvicorn backend.app.main:app --reload --port 8012
 """
 
 from __future__ import annotations

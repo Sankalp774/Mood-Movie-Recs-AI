@@ -431,8 +431,8 @@ function apiBases() {
   // Try same-origin first, then common local dev ports
   const origins = [
     window.location.origin,
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
+    "http://127.0.0.1:8012",
+    "http://localhost:8012",
   ];
   // de-dupe
   return [...new Set(origins.filter(Boolean))];
@@ -482,7 +482,7 @@ async function enableCamera() {
 
   if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
     status.textContent = "Camera needs HTTPS or localhost (not file://)";
-    toast("Open via http://localhost:8000 — file:// blocks the camera");
+    toast("Open via http://localhost:8012 — file:// blocks the camera");
     return;
   }
   if (!navigator.mediaDevices?.getUserMedia) {
@@ -698,7 +698,7 @@ async function scanExpression() {
   } catch (e) {
     console.error(e);
     const hint =
-      "Start server: uvicorn backend.app.main:app --port 8000  · then open http://localhost:8000";
+      "Start server: uvicorn backend.app.main:app --port 8012  · then open http://localhost:8012";
     document.getElementById("face-expr").textContent = "scan failed";
     document.getElementById("face-mood").textContent = hint;
     status.textContent = e.message || "Scan failed";

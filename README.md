@@ -59,10 +59,10 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # from repo root
-uvicorn backend.app.main:app --reload --port 8000
+uvicorn backend.app.main:app --reload --port 8012
 ```
 
-Open **http://localhost:8000**
+Open **http://localhost:8012**
 
 1. **Enable camera** → **Read expression** (downloads FER+ ONNX on first run)  
 2. **Get recommendations** → watch match bar → swipe the stack  
@@ -71,15 +71,15 @@ Open **http://localhost:8000**
 
 ```bash
 # health
-curl -s localhost:8000/api/health | jq
+curl -s localhost:8012/api/health | jq
 
 # recommend
-curl -s -X POST localhost:8000/api/recommend \
+curl -s -X POST localhost:8012/api/recommend \
   -H 'Content-Type: application/json' \
   -d '{"mood":"cozy","top_k":5}' | jq
 
 # emotion (base64 image / data URL)
-curl -s -X POST localhost:8000/api/emotion \
+curl -s -X POST localhost:8012/api/emotion \
   -H 'Content-Type: application/json' \
   -d '{"image":"data:image/jpeg;base64,..."}' | jq
 ```
@@ -88,7 +88,7 @@ curl -s -X POST localhost:8000/api/emotion \
 
 ```bash
 docker build -t mood-movie-recs .
-docker run --rm -p 8000:8000 mood-movie-recs
+docker run --rm -p 8012:8012 mood-movie-recs
 ```
 
 ### Eval
