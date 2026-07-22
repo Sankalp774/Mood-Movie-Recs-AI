@@ -33,6 +33,7 @@ const state = {
   lastRecs: [],
   stack: { head: null, nodes: [], index: 0 }, // linked-list style
   camStream: null,
+  apiBase: null,
 };
 
 /* ---------- storage ---------- */
@@ -426,86 +427,327 @@ function closeModal() {
 }
 
 /* ---------- Camera + OpenCV emotion API ---------- */
+function apiBases() {
+  // Try same-origin first, then common local dev ports
+  const origins = [
+    window.location.origin,
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+  ];
+  // de-dupe
+  return [...new Set(origins.filter(Boolean))];
+}
+
+async function apiFetch(path, options = {}) {
+  let lastErr;
+  for (const base of apiBases()) {
+    try {
+      const url = base.replace(/\/$/, "") + path;
+      const ctrl =
+        options.signal ||
+        (typeof AbortSignal !== "undefined" && AbortSignal.timeout
+          ? AbortSignal.timeout(12000)
+          : undefined);
+      const r = await fetch(url, { ...options, signal: ctrl });
+      if (r.ok || r.status < 500) {
+        // prefer first reachable host
+        state.apiBase = base.replace(/\/$/, "");
+        state.mode = "api";
+        return r;
+      }
+      lastErr = new Error(`HTTP ${r.status} from ${base}`);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error("API unreachable");
+}
+
+function stopCamera() {
+  if (state.camStream) {
+    state.camStream.getTracks().forEach((t) => t.stop());
+    state.camStream = null;
+  }
+  const video = document.getElementById("cam");
+  if (video) video.srcObject = null;
+  document.getElementById("cam-wrap")?.classList.remove("live");
+  const box = document.getElementById("cam-face-box");
+  if (box) box.classList.remove("show");
+}
+
 async function enableCamera() {
+  const status = document.getElementById("cam-status");
+  const btn = document.getElementById("btn-cam");
+  const scanBtn = document.getElementById("btn-scan");
+
+  if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+    status.textContent = "Camera needs HTTPS or localhost (not file://)";
+    toast("Open via http://localhost:8000 — file:// blocks the camera");
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    status.textContent = "Browser has no camera API";
+    toast("Use Chrome/Edge/Firefox with camera permission");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Starting…";
+  status.textContent = "Requesting camera permission…";
+  stopCamera();
+
+  const attempts = [
+    { video: { facingMode: { ideal: "user" }, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
+    { video: { facingMode: "user" }, audio: false },
+    { video: true, audio: false },
+  ];
+
+  let stream = null;
+  let lastErr = null;
+  for (const constraints of attempts) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      break;
+    } catch (e) {
+      lastErr = e;
+      console.warn("getUserMedia attempt failed", constraints, e);
+    }
+  }
+
+  if (!stream) {
+    btn.disabled = false;
+    btn.textContent = "Enable camera";
+    const name = lastErr?.name || "Error";
+    const msg =
+      name === "NotAllowedError"
+        ? "Permission denied — allow camera in browser settings"
+        : name === "NotFoundError"
+          ? "No camera found on this device"
+          : name === "NotReadableError"
+            ? "Camera is busy (close Zoom/FaceTime and retry)"
+            : `Camera failed: ${lastErr?.message || name}`;
+    status.textContent = msg;
+    toast(msg);
+    return;
+  }
+
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
-      audio: false,
-    });
     state.camStream = stream;
     const video = document.getElementById("cam");
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("webkit-playsinline", "true");
+    video.muted = true;
+    video.autoplay = true;
     video.srcObject = stream;
-    document.getElementById("cam-status").textContent = "Camera live — face the lens";
-    document.getElementById("btn-scan").disabled = false;
+
+    // Critical: some browsers need an explicit play()
+    await video.play().catch(() => {});
+
+    await new Promise((resolve, reject) => {
+      if (video.readyState >= 2 && video.videoWidth > 0) {
+        resolve();
+        return;
+      }
+      const onReady = () => {
+        cleanup();
+        resolve();
+      };
+      const onErr = () => {
+        cleanup();
+        reject(new Error("Video failed to load"));
+      };
+      const t = setTimeout(() => {
+        cleanup();
+        if (video.videoWidth > 0) resolve();
+        else reject(new Error("Camera timed out — try again"));
+      }, 10000);
+      function cleanup() {
+        clearTimeout(t);
+        video.removeEventListener("loadedmetadata", onReady);
+        video.removeEventListener("loadeddata", onReady);
+        video.removeEventListener("error", onErr);
+      }
+      video.addEventListener("loadedmetadata", onReady);
+      video.addEventListener("loadeddata", onReady);
+      video.addEventListener("error", onErr);
+    });
+
+    document.getElementById("cam-wrap")?.classList.add("live");
+    status.textContent = `Camera live (${video.videoWidth}×${video.videoHeight}) — face the lens`;
+    scanBtn.disabled = false;
+    btn.textContent = "Restart camera";
+    btn.disabled = false;
     toast("Camera enabled");
   } catch (e) {
-    document.getElementById("cam-status").textContent = "Camera permission denied";
-    toast("Could not open camera");
     console.error(e);
+    stopCamera();
+    status.textContent = e.message || "Could not start video";
+    toast(status.textContent);
+    btn.disabled = false;
+    btn.textContent = "Enable camera";
   }
 }
 
 function captureFrameDataUrl() {
   const video = document.getElementById("cam");
   const canvas = document.getElementById("cam-canvas");
-  if (!video.videoWidth) throw new Error("Camera not ready");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  if (!video.srcObject) throw new Error("Camera not started — click Enable camera");
+  if (!video.videoWidth || !video.videoHeight) {
+    throw new Error("Camera not ready yet — wait a second and retry");
+  }
+  // Downscale for faster API upload
+  const maxW = 480;
+  const scale = Math.min(1, maxW / video.videoWidth);
+  const w = Math.round(video.videoWidth * scale);
+  const h = Math.round(video.videoHeight * scale);
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext("2d");
-  // un-mirror for model
-  ctx.drawImage(video, 0, 0);
-  return canvas.toDataURL("image/jpeg", 0.85);
+  // Capture un-mirrored (video element is only mirrored via CSS)
+  ctx.drawImage(video, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
+
+function showFaceBox(box, videoW, videoH) {
+  const el = document.getElementById("cam-face-box");
+  const wrap = document.getElementById("cam-wrap");
+  if (!el || !wrap || !box) {
+    el?.classList.remove("show");
+    return;
+  }
+  // Map image coords → preview (mirrored CSS)
+  const rect = wrap.getBoundingClientRect();
+  const scaleX = rect.width / videoW;
+  const scaleY = rect.height / videoH;
+  // because preview is mirrored, flip x
+  const x = videoW - box.x - box.w;
+  el.style.left = `${x * scaleX}px`;
+  el.style.top = `${box.y * scaleY}px`;
+  el.style.width = `${box.w * scaleX}px`;
+  el.style.height = `${box.h * scaleY}px`;
+  el.classList.add("show");
+}
+
+function applyEmotionResult(data) {
+  document.getElementById("face-expr").textContent = data.expression;
+  document.getElementById("face-mood").textContent = `→ mood: ${data.mood}`;
+  document.getElementById("face-conf").textContent = data.confidence != null
+    ? `confidence ${(data.confidence * 100).toFixed(1)}%`
+    : "";
+  document.getElementById("face-engine").textContent = data.engine || "opencv";
+  document.getElementById("cam-status").textContent =
+    `Detected ${data.expression} → ${data.mood}`;
+
+  if (data.mood) {
+    state.selectedMood = data.mood;
+    renderMoods();
+  }
+  if (data.query_hint) {
+    document.getElementById("query").value = data.query_hint;
+  }
+  toast(`Expression: ${data.expression} → ${data.mood}`);
 }
 
 async function scanExpression() {
-  if (state.mode !== "api") {
-    toast("Start the FastAPI server for OpenCV emotion (uvicorn …)");
-    document.getElementById("face-expr").textContent = "API required";
-    document.getElementById("face-mood").textContent =
-      "OpenCV FER runs on the backend. Run: uvicorn backend.app.main:app --port 8000";
-    return;
-  }
   const btn = document.getElementById("btn-scan");
+  const status = document.getElementById("cam-status");
   btn.disabled = true;
   btn.textContent = "Scanning…";
-  document.getElementById("cam-status").textContent = "OpenCV analyzing face…";
+  status.textContent = "Capturing frame…";
+
   try {
     const image = captureFrameDataUrl();
-    const r = await fetch("/api/emotion", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image }),
-    });
-    const data = await r.json();
-    if (!r.ok || data.ok === false) {
+    status.textContent = "OpenCV analyzing face…";
+
+    let data;
+    try {
+      const r = await apiFetch("/api/emotion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image }),
+      });
+      data = await r.json();
+      if (!r.ok) {
+        throw new Error(data.detail || data.message || `HTTP ${r.status}`);
+      }
+    } catch (apiErr) {
+      console.warn("OpenCV API failed, trying browser FaceDetector", apiErr);
+      // Browser fallback so camera still produces a mood without backend
+      data = await browserFaceFallback(image);
+      if (!data) {
+        throw apiErr;
+      }
+    }
+
+    if (data.ok === false) {
       document.getElementById("face-expr").textContent = data.error || "failed";
       document.getElementById("face-mood").textContent = data.message || "Try better lighting";
       document.getElementById("face-conf").textContent = "";
-      document.getElementById("cam-status").textContent = data.message || "No face";
+      document.getElementById("face-engine").textContent = data.engine || "";
+      status.textContent = data.message || "No face";
+      document.getElementById("cam-face-box")?.classList.remove("show");
       toast(data.message || "Expression failed");
       return;
     }
-    document.getElementById("face-expr").textContent = data.expression;
-    document.getElementById("face-mood").textContent = `→ mood: ${data.mood}`;
-    document.getElementById("face-conf").textContent =
-      `confidence ${(data.confidence * 100).toFixed(1)}%`;
-    document.getElementById("face-engine").textContent = data.engine || "opencv";
-    document.getElementById("cam-status").textContent =
-      `Detected ${data.expression} → ${data.mood}`;
 
-    // auto-select mood + optional query hint
-    state.selectedMood = data.mood;
-    renderMoods();
-    if (data.query_hint) {
-      document.getElementById("query").value = data.query_hint;
+    const video = document.getElementById("cam");
+    if (data.face_box) {
+      showFaceBox(data.face_box, video.videoWidth, video.videoHeight);
     }
-    toast(`Expression: ${data.expression} → ${data.mood}`);
+    applyEmotionResult(data);
   } catch (e) {
     console.error(e);
-    toast("Expression scan failed — is the API running?");
+    const hint =
+      "Start server: uvicorn backend.app.main:app --port 8000  · then open http://localhost:8000";
+    document.getElementById("face-expr").textContent = "scan failed";
+    document.getElementById("face-mood").textContent = hint;
+    status.textContent = e.message || "Scan failed";
+    toast(e.message || "Expression scan failed");
   } finally {
     btn.disabled = false;
     btn.textContent = "Read expression";
+  }
+}
+
+/** Fallback when FastAPI/OpenCV is offline — browser FaceDetector if available */
+async function browserFaceFallback(dataUrl) {
+  if (!("FaceDetector" in window)) return null;
+  try {
+    const img = new Image();
+    await new Promise((res, rej) => {
+      img.onload = res;
+      img.onerror = rej;
+      img.src = dataUrl;
+    });
+    const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+    const faces = await detector.detect(img);
+    if (!faces.length) {
+      return {
+        ok: false,
+        error: "no_face",
+        message: "No face detected (browser). Face the camera with light on your face.",
+        engine: "browser-FaceDetector",
+      };
+    }
+    const b = faces[0].boundingBox;
+    // Without OpenCV expression model, use neutral/reflective and still unlock flow
+    return {
+      ok: true,
+      expression: "neutral",
+      confidence: 0.5,
+      mood: "reflective",
+      query_hint: "reflective calm drama thoughtful",
+      face_box: {
+        x: Math.round(b.x),
+        y: Math.round(b.y),
+        w: Math.round(b.width),
+        h: Math.round(b.height),
+      },
+      engine: "browser-FaceDetector (start API for full OpenCV FER)",
+    };
+  } catch (e) {
+    console.warn(e);
+    return null;
   }
 }
 
@@ -514,18 +756,22 @@ async function fetchRecs() {
   const query = document.getElementById("query").value.trim();
   const mood = state.selectedMood;
   if (state.mode === "api") {
-    const r = await fetch("/api/recommend", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mood,
-        query: query || null,
-        top_k: 8,
-        liked_ids: [...state.liked],
-      }),
-    });
-    const data = await r.json();
-    return data.recommendations;
+    try {
+      const r = await apiFetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mood,
+          query: query || null,
+          top_k: 8,
+          liked_ids: [...state.liked],
+        }),
+      });
+      const data = await r.json();
+      return data.recommendations;
+    } catch (e) {
+      console.warn("API recommend failed, using local TF-IDF", e);
+    }
   }
   return localRecommend({ mood, query, topK: 8 });
 }
@@ -562,26 +808,38 @@ async function runRecommend() {
 
 /* ---------- boot ---------- */
 async function detectMode() {
-  try {
-    const r = await fetch("/api/health", { signal: AbortSignal.timeout(1200) });
-    if (r.ok) {
-      state.mode = "api";
-      return;
-    }
-  } catch {}
+  for (const base of apiBases()) {
+    try {
+      const r = await fetch(`${base.replace(/\/$/, "")}/api/health`, {
+        signal: AbortSignal.timeout?.(2000),
+      });
+      if (r.ok) {
+        state.mode = "api";
+        state.apiBase = base.replace(/\/$/, "");
+        return;
+      }
+    } catch {}
+  }
   state.mode = "static";
+  state.apiBase = null;
 }
 
 async function loadMovies() {
   if (state.mode === "api") {
-    const r = await fetch("/api/movies");
-    const data = await r.json();
-    state.movies = data.movies;
-  } else {
-    const base = document.querySelector("script[data-base]")?.dataset.base || "./";
-    const r = await fetch(`${base}assets/movies.json`);
-    state.movies = await r.json();
+    try {
+      const r = await apiFetch("/api/movies");
+      const data = await r.json();
+      state.movies = data.movies;
+      state.index = buildIndex(state.movies);
+      return;
+    } catch (e) {
+      console.warn(e);
+      state.mode = "static";
+    }
   }
+  const base = document.querySelector("script[data-base]")?.dataset.base || "./";
+  const r = await fetch(`${base}assets/movies.json`);
+  state.movies = await r.json();
   state.index = buildIndex(state.movies);
 }
 

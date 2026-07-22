@@ -67,8 +67,12 @@ _face_cascade = None
 def _get_cascade():
     global _face_cascade
     if _face_cascade is None:
+        # Prefer default frontal; alt is a fallback file we try at detect time
         path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
         _face_cascade = cv2.CascadeClassifier(path)
+        if _face_cascade.empty():
+            alt = cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml"
+            _face_cascade = cv2.CascadeClassifier(alt)
         if _face_cascade.empty():
             raise RuntimeError("Failed to load OpenCV Haar cascade for faces")
     return _face_cascade
@@ -113,18 +117,33 @@ def decode_image(image_b64: str) -> np.ndarray:
 
 
 def detect_largest_face(gray: np.ndarray) -> tuple[int, int, int, int] | None:
+    """Multi-pass Haar detection — looser settings for webcams / low light."""
     cascade = _get_cascade()
-    faces = cascade.detectMultiScale(
-        gray,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(60, 60),
-    )
-    if len(faces) == 0:
-        return None
-    # largest area
-    x, y, w, h = max(faces, key=lambda f: f[2] * f[3])
-    return int(x), int(y), int(w), int(h)
+    attempts = [
+        dict(scaleFactor=1.08, minNeighbors=4, minSize=(48, 48)),
+        dict(scaleFactor=1.05, minNeighbors=3, minSize=(36, 36)),
+        dict(scaleFactor=1.1, minNeighbors=5, minSize=(60, 60)),
+    ]
+    # also try alt2 cascade if default finds nothing
+    cascades = [cascade]
+    alt_path = cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml"
+    alt = cv2.CascadeClassifier(alt_path)
+    if not alt.empty():
+        cascades.append(alt)
+
+    best = None
+    best_area = 0
+    for cas in cascades:
+        for params in attempts:
+            faces = cas.detectMultiScale(gray, **params)
+            for (x, y, w, h) in faces:
+                area = int(w) * int(h)
+                if area > best_area:
+                    best_area = area
+                    best = (int(x), int(y), int(w), int(h))
+            if best is not None and best_area > gray.shape[0] * gray.shape[1] * 0.02:
+                return best
+    return best
 
 
 def preprocess_face(gray: np.ndarray, box: tuple[int, int, int, int]) -> np.ndarray:
