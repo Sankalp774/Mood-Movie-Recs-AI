@@ -1,65 +1,39 @@
 # Mood Movie Recs — Content-Based Recommender
 
-**Real ML recommender** (not a vaporware pitch):
+> **Academic stage:** **3rd year** exploration · **Created:** February 2025  
+> **Learning focus:** Recommendation systems · content-based filtering · TF-IDF + cosine similarity · mood features · Hit@K sanity metrics · Android/Kotlin UI sketch
 
-- TF-IDF over title + genres + **mood tags** + overview  
+## About
+
+**Real ML recommender** (content-based) plus early Android stubs:
+
+- TF-IDF over title + genres + mood tags + overview  
 - Cosine similarity ranking  
-- Offline self-retrieval metrics (Hit@1 / Hit@3 / mean rank)  
-- CLI + Gradio UI  
-- Kotlin stubs kept as mobile exploration notes  
+- Offline self-retrieval metrics  
+- CLI + Gradio  
 
-```text
-user mood / query → vectorize → cosine sim → top-k movies
-```
+## What I learned
+
+| Topic | How this project taught it |
+|-------|----------------------------|
+| Recommender systems | Content-based vs collaborative ideas |
+| Vector space IR | TF-IDF, cosine similarity |
+| Feature design | Mood tags as explicit signals |
+| Offline eval | Hit@1 / Hit@3 / mean rank |
+| Mobile (intro) | Kotlin / Compose skeleton |
 
 ## Quickstart
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# CLI
 python -m recommender.app --mood "tense dark" --top-k 5
-
-# Metrics
 python -m recommender.app --eval
-
-# UI
 python -m recommender.app --ui
 ```
 
-## Evaluation
+## Status
 
-`python -m recommender.app --eval` writes `metrics/eval_report.json`:
-
-| Metric | Meaning |
-|--------|---------|
-| hit_at_1 | Fraction of movies retrieving themselves as #1 from overview |
-| hit_at_3 | Self in top-3 |
-| mean_rank | Average self-rank (lower is better) |
-
-This is a **sanity/retrieval** check on a small catalog — not offline MovieLens SOTA.
-
-## Layout
-
-```text
-recommender/
-  engine.py
-  app.py
-  data/movies.csv
-MainActivity.kt / Movie.kt   # Android skeleton (secondary)
-metrics/                     # generated
-```
-
-## Interview narrative
-
-> Built a content-based recommender with explicit mood features, measured ranking quality with self-retrieval metrics, and shipped CLI/UI — instead of claiming an unfinished “AI social movie network.”
-
-## Next upgrades
-
-- Collaborative filtering on MovieLens  
-- Two-tower embeddings  
-- Full Android client consuming `/recommend` API  
+If this repo is **archived** on GitHub, unarchive to receive latest pushes. Kotlin files are secondary; the recommender package is the hiring-relevant core.
 
 ## Author
 
