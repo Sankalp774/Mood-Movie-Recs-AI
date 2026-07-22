@@ -1,53 +1,56 @@
 # Mood Movie Recs
 
-> **Academic stage:** 3rd year → product rebuild · **Created:** Feb 2025 · **Rebuilt:** 2026  
-> **Learning focus:** Recommender systems · content-based filtering · TF-IDF · cosine similarity · mood UX · FastAPI · full-stack web · GitHub Pages hosting
+> **Created:** (2025-02-28)  
+> **Latest update:** OpenCV facial expression mood detection · match loading bar · 4:3 liquid-glass Netflix-style card stack (linked-list navigation) · TF-IDF recommender SPA + FastAPI  
 
-**Fully hosted mood-first movie discovery website** with a real content-based AI recommender.
+**Academic stage:** 3rd year → product rebuild  
+**Learning focus:** Recommender systems · OpenCV face/expression pipeline · full-stack UX · content-based IR
 
 🎬 **Live static site (GitHub Pages):**  
 `https://sankalp774.github.io/Mood-Movie-Recs-AI/`  
-*(enable Pages after push — Actions workflow included)*
+*(Settings → Pages → Source: GitHub Actions)*
 
 ---
 
-## Product features (shipped)
+## Changelog snapshot
 
-| Feature | Implementation |
-|---------|----------------|
-| **Mood-based discovery** | 12 mood channels (cozy, tense, romantic, mind-bending, …) |
-| **Free-text vibe search** | “rainy night heist”, “hopeful sci-fi”, etc. |
-| **AI ranking** | TF-IDF over title + genres + mood tags + overview → cosine similarity |
-| **Personalization** | Likes / high ratings inject profile terms into the query |
-| **Discovery feed** | High-rated catalog slice |
-| **Watchlist + likes + 1–5 ratings** | Browser `localStorage` |
-| **Movie detail modal** | Poster, genres, moods, overview, actions |
-| **Dual host modes** | FastAPI API **or** pure on-device JS engine for static hosting |
-| **Eval harness** | Self-retrieval Hit@K via Python |
+| When | What |
+|------|------|
+| **(2025-02-28)** *created* | Original Mood Movie Recs concept / Android sketch era |
+| **2026 rebuild** | Full hosted website + TF-IDF content recommender + 40-film catalog |
+| **Latest update** | **OpenCV** Haar face detect + **FER+ ONNX** expression → mood; **match % bar** on recommend; **4:3 pop stack** with blur liquid glass + Netflix prev/next by match rank |
 
-Vision items like live watch-parties / social clubs remain **roadmap** — this rebuild prioritizes a polished, honest, deployable recommender product.
+---
+
+## Features (shipped)
+
+| Feature | Detail |
+|---------|--------|
+| **OpenCV face mood** | Webcam frame → `/api/emotion` → face box + expression (happiness, sadness, …) → mapped mood |
+| **Match loading bar** | Glass overlay animates 0→100% while scoring recommendations |
+| **4:3 stack UI** | Results as a **linked-list** of cards; navigate like Netflix (← →); match % on each card |
+| **Liquid glass chrome** | Backdrop blur + frosted panels behind stack & loader |
+| **Mood chips + vibe search** | Manual mood or free-text query |
+| **Personalization** | Likes / ratings reshape ranking |
+| **Dual host** | FastAPI (OpenCV path) or static Pages (JS TF-IDF; face needs API) |
 
 ---
 
 ## Architecture
 
 ```text
-┌─────────────────────────────────────────────┐
-│  web/  cinematic SPA (HTML/CSS/JS)          │
-│   ├─ GitHub Pages (static TF-IDF engine)    │
-│   └─ or served by FastAPI at /              │
-└──────────────────┬──────────────────────────┘
-                   │ /api/* (optional)
-┌──────────────────▼──────────────────────────┐
-│  backend/app                                │
-│   recommender.py  ·  main.py (FastAPI)      │
-│   data/movies.json  (40 curated films)      │
-└─────────────────────────────────────────────┘
+Webcam ──▶ POST /api/emotion
+              OpenCV Haar face detect
+              FER+ ONNX expression
+              mood + query_hint
+                    │
+                    ▼
+           TF-IDF recommender ──▶ match bar ──▶ 4:3 glass stack (linked list)
 ```
 
 ---
 
-## Quickstart — full stack (recommended locally)
+## Quickstart (full stack — required for OpenCV face)
 
 ```bash
 git clone https://github.com/Sankalp774/Mood-Movie-Recs-AI.git
@@ -61,16 +64,24 @@ uvicorn backend.app.main:app --reload --port 8000
 
 Open **http://localhost:8000**
 
-API docs: http://localhost:8000/docs
+1. **Enable camera** → **Read expression** (downloads FER+ ONNX on first run)  
+2. **Get recommendations** → watch match bar → swipe the stack  
 
-### API examples
+### API
 
 ```bash
-curl -s http://localhost:8000/api/health | jq
-curl -s -X POST http://localhost:8000/api/recommend \
+# health
+curl -s localhost:8000/api/health | jq
+
+# recommend
+curl -s -X POST localhost:8000/api/recommend \
   -H 'Content-Type: application/json' \
   -d '{"mood":"cozy","top_k":5}' | jq
-curl -s http://localhost:8000/api/eval | jq
+
+# emotion (base64 image / data URL)
+curl -s -X POST localhost:8000/api/emotion \
+  -H 'Content-Type: application/json' \
+  -d '{"image":"data:image/jpeg;base64,..."}' | jq
 ```
 
 ### Docker
@@ -80,7 +91,7 @@ docker build -t mood-movie-recs .
 docker run --rm -p 8000:8000 mood-movie-recs
 ```
 
-### Offline eval
+### Eval
 
 ```bash
 python -m eval.run_eval
@@ -88,56 +99,54 @@ python -m eval.run_eval
 
 ---
 
-## Hosting
-
-### A) GitHub Pages (static, free, fully hosted)
-
-1. Push this repo to GitHub  
-2. **Settings → Pages → Source: GitHub Actions**  
-3. Workflow `.github/workflows/pages.yml` deploys `web/`  
-4. Site: `https://sankalp774.github.io/Mood-Movie-Recs-AI/`  
-
-Static mode runs the **same ranking idea in JavaScript** (no Python server required).
-
-### B) Single container (API + UI)
-
-Deploy the Docker image to Render / Railway / Fly.io — one service on port 8000.
-
----
-
 ## Project layout
 
 ```text
-web/                    # Hosted website
+web/                      # Hosted SPA
   index.html
-  assets/styles.css
-  assets/app.js
+  assets/app.js           # match bar, stack, webcam, TF-IDF fallback
+  assets/styles.css       # liquid glass + 4:3 stack
   assets/movies.json
 backend/
-  app/main.py           # FastAPI + static mount
-  app/recommender.py    # sklearn TF-IDF engine
+  app/main.py             # FastAPI + static host
+  app/recommender.py      # sklearn TF-IDF
+  app/emotion.py          # OpenCV + FER+ ONNX
   data/movies.json
+  models/                 # emotion-ferplus-8.onnx (auto-download)
 eval/run_eval.py
-Dockerfile
 .github/workflows/pages.yml
+Dockerfile
 ```
 
 ---
 
-## What I learned
+## Expression → mood map
 
-| Topic | In this project |
-|-------|-----------------|
-| Recommender systems | Content-based design with mood features |
-| IR / ML | TF-IDF, cosine similarity, score blending |
-| Full-stack | FastAPI + modern SPA UX |
-| Progressive hosting | Static fallback when API absent |
-| Product honesty | Ship core loops; mark social features as roadmap |
+| Expression (FER+) | Mood for ranking |
+|-------------------|------------------|
+| happiness | whimsical |
+| surprise | curious |
+| sadness | emotional |
+| anger | intense |
+| fear | tense |
+| disgust / contempt | dark |
+| neutral | reflective |
+
+---
+
+## Notes
+
+- **Camera + OpenCV** need the Python API (localhost/Docker). GitHub Pages static mode still runs the site + TF-IDF; face scan prompts you to run the API.  
+- First emotion call downloads `emotion-ferplus-8.onnx` (~ONCE).  
+- Posters via TMDB image CDN; catalog is curated demo data.  
+- Watch parties / social clubs remain roadmap — not faked.
 
 ---
 
 ## Author
 
 **Sankalp Sahu** · Applied AI portfolio  
+
+**Created:** (2025-02-28) · **Latest update:** OpenCV facial expression + match bar + 4:3 glass stack  
 
 License: MIT

@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from backend.app.emotion import analyze_image_b64
 from backend.app.recommender import MOOD_CATALOG, MoodMovieRecommender
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -24,8 +25,8 @@ engine = MoodMovieRecommender.load()
 
 app = FastAPI(
     title="Mood Movie Recs",
-    description="Mood-based content recommender API",
-    version="2.0.0",
+    description="Mood-based content recommender + OpenCV facial expression API",
+    version="2.1.0",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -43,10 +44,29 @@ class RecommendRequest(BaseModel):
     exclude_ids: list[int] = Field(default_factory=list)
 
 
+class EmotionRequest(BaseModel):
+    image: str = Field(..., description="Base64 image or data URL from webcam")
+
+
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "movies": len(engine.movies), "version": "2.0.0"}
+    return {
+        "status": "ok",
+        "movies": len(engine.movies),
+        "version": "2.1.0",
+        "features": ["recommend", "opencv_emotion", "stack_ui"],
+    }
 
+
+@app.post("/api/emotion")
+def emotion_from_webcam(body: EmotionRequest):
+    """OpenCV face detection + FER+ expression → mood for recommendations."""
+    try:
+        return analyze_image_b64(body.image)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    except Exception as e:
+        raise HTTPException(500, f"Emotion pipeline failed: {e}") from e
 
 @app.get("/api/moods")
 def moods():

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mood Movie Recs — AI mood-based discovery</title>
-  <meta name="description" content="Discover films by mood with a content-based AI recommender. Like, rate, and build a watchlist." />
+  <title>Mood Movie Recs — Face mood + AI recommendations</title>
+  <meta name="description" content="OpenCV facial expression mood detection, TF-IDF recommender, Netflix-style match stack." />
   <link rel="stylesheet" href="./assets/styles.css" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎬%3C/text%3E%3C/svg%3E" />
 </head>
@@ -17,9 +17,9 @@
       </div>
       <nav class="nav-links">
         <a href="#discover">Discover</a>
+        <a href="#face">Face mood</a>
         <a href="#recs">For you</a>
         <a href="#watchlist">Watchlist</a>
-        <a href="#liked">Liked</a>
         <a href="#how">How it works</a>
         <span class="api-pill" id="api-pill">…</span>
       </nav>
@@ -30,32 +30,57 @@
     <section class="hero">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow">AI · content-based recommender · mood-first</div>
+          <div class="eyebrow">OpenCV face mood · TF-IDF ranking · glass match stack</div>
           <h1>Find your next film by <span>how you feel</span></h1>
           <p class="lead">
-            Pick a mood, refine with a free-text vibe, like what you love —
-            the model re-ranks a curated catalog using TF-IDF + cosine similarity
-            over genres, mood tags, and overviews.
+            Scan your expression with the camera (OpenCV on the API), or pick a mood manually.
+            Recommendations open in a <strong>4:3 Netflix-style card stack</strong> ranked by match.
           </p>
           <div class="stat-row">
             <div class="stat"><b id="stat-movies">—</b><span>films in catalog</span></div>
             <div class="stat"><b id="stat-moods">—</b><span>mood channels</span></div>
-            <div class="stat"><b>TF-IDF</b><span>ranking engine</span></div>
+            <div class="stat"><b>OpenCV</b><span>+ FER expression</span></div>
           </div>
         </div>
         <div class="hero-card">
-          <strong>Tonight’s protocol</strong>
+          <strong>Flow</strong>
           <p class="lead" style="margin:0.5rem 0 0;font-size:0.95rem">
-            1) Tap a mood<br />
-            2) Optional: describe a vibe (“rainy night heist”)<br />
-            3) Heart films you like — recommendations adapt<br />
-            4) Save a watchlist for later
+            1) Face scan <em>or</em> tap a mood<br />
+            2) Hit <strong>Get recommendations</strong><br />
+            3) Watch the match bar fill<br />
+            4) Swipe the glass stack like Netflix (← →)
           </p>
         </div>
       </div>
     </section>
 
     <div class="container">
+      <!-- OpenCV face panel -->
+      <div class="panel face-panel" id="face">
+        <div class="face-grid">
+          <div>
+            <h2>Face mood (OpenCV)</h2>
+            <p class="muted-line">Webcam → OpenCV Haar face detect → FER+ expression → mood</p>
+            <div class="cam-wrap">
+              <video id="cam" autoplay playsinline muted></video>
+              <canvas id="cam-canvas" class="hidden"></canvas>
+              <div class="cam-overlay" id="cam-status">Camera off</div>
+            </div>
+            <div class="search-row" style="margin-top:0.75rem">
+              <button class="btn secondary" id="btn-cam" type="button">Enable camera</button>
+              <button class="btn" id="btn-scan" type="button" disabled>Read expression</button>
+            </div>
+          </div>
+          <div class="face-result" id="face-result">
+            <h3>Expression result</h3>
+            <p id="face-expr" class="face-big">—</p>
+            <p id="face-mood" class="muted-line">Mood will appear here</p>
+            <p id="face-conf" class="muted-line"></p>
+            <p id="face-engine" class="muted-line" style="font-size:0.75rem"></p>
+          </div>
+        </div>
+      </div>
+
       <div class="panel" id="discover">
         <h2>How are you feeling?</h2>
         <div class="moods" id="moods"></div>
@@ -70,8 +95,9 @@
         <div class="section-head">
           <div>
             <h2>Recommended for this mood</h2>
-            <p id="recs-sub">Personalized ranking</p>
+            <p id="recs-sub">Personalized ranking · click a card or open the match stack</p>
           </div>
+          <button class="btn secondary" id="btn-open-stack" type="button">Open match stack</button>
         </div>
         <div class="grid" id="recs"></div>
       </section>
@@ -107,13 +133,12 @@
       </section>
 
       <section id="how" class="panel" style="margin-top:1rem">
-        <h2>How the AI works</h2>
+        <h2>How it works</h2>
         <p class="lead" style="margin:0;font-size:0.95rem">
-          Each movie is turned into a text document: <em>title + genres + mood tags + overview</em>.
-          We build a <strong>TF-IDF</strong> vector space and rank by <strong>cosine similarity</strong>
-          to your mood / free-text query, lightly blending catalog quality scores.
-          Likes inject those films’ profiles into the query (content-based personalization).
-          Offline self-retrieval metrics ship with the Python engine (<code>/api/eval</code> or <code>python -m eval.run_eval</code>).
+          <strong>Face path:</strong> OpenCV Haar cascade finds your face; FER+ ONNX classifies expression
+          (happiness, sadness, anger, …) and maps it to a mood for the recommender.<br />
+          <strong>Rank path:</strong> TF-IDF over title + genres + mood tags + overview → cosine similarity.<br />
+          <strong>UI path:</strong> Match loading bar → 4:3 liquid-glass card stack (linked-list prev/next), Netflix-style.
         </p>
       </section>
     </div>
@@ -122,18 +147,49 @@
   <footer>
     <div class="container">
       <p>
-        Built by <strong>Sankalp Sahu</strong> · Applied AI portfolio ·
-        <a href="https://github.com/Sankalp774/Mood-Movie-Recs-AI">Source on GitHub</a>
+        Built by <strong>Sankalp Sahu</strong> ·
+        <a href="https://github.com/Sankalp774/Mood-Movie-Recs-AI">Source</a>
       </p>
-      <p>Educational demo. Posters via TMDB image CDN; movie data is a curated demo catalog.</p>
+      <p class="muted-line">
+        <strong>Created:</strong> (2025-02-28) ·
+        <strong>Latest update:</strong> OpenCV facial expression mood + match bar + 4:3 glass stack navigation
+      </p>
     </div>
   </footer>
 
+  <!-- Detail modal -->
   <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true">
     <div class="modal" id="modal-body"></div>
   </div>
-  <div class="toast" id="toast"></div>
 
+  <!-- Match loading overlay -->
+  <div class="match-overlay" id="match-overlay" aria-hidden="true">
+    <div class="match-panel glass">
+      <div class="match-title">Matching your mood…</div>
+      <div class="match-sub" id="match-sub">Scoring catalog against your vibe</div>
+      <div class="match-bar-track">
+        <div class="match-bar-fill" id="match-bar-fill"></div>
+      </div>
+      <div class="match-pct" id="match-pct">0%</div>
+    </div>
+  </div>
+
+  <!-- Netflix-style 4:3 stack -->
+  <div class="stack-overlay" id="stack-overlay" aria-hidden="true">
+    <div class="stack-backdrop"></div>
+    <button class="stack-close" id="stack-close" type="button" aria-label="Close">×</button>
+    <div class="stack-stage">
+      <button class="stack-nav prev" id="stack-prev" type="button" aria-label="Previous">‹</button>
+      <div class="stack-deck" id="stack-deck"></div>
+      <button class="stack-nav next" id="stack-next" type="button" aria-label="Next">›</button>
+    </div>
+    <div class="stack-meta">
+      <div class="stack-counter" id="stack-counter">1 / 1</div>
+      <div class="stack-hint">← → or buttons · Esc to close · ordered by match (linked list)</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
   <script src="./assets/app.js" data-base="./"></script>
 </body>
 </html>

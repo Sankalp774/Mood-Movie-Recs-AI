@@ -245,3 +245,171 @@ footer a { color: #cbbfff; text-decoration: underline; }
   padding: 0.2rem 0.55rem;
 }
 .api-pill.live { color: #8dffb0; border-color: rgba(80,220,140,.35); }
+
+/* ---- Face panel ---- */
+.muted-line { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0; }
+.face-panel { overflow: hidden; }
+.face-grid {
+  display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.25rem; align-items: start;
+}
+@media (max-width: 800px) { .face-grid { grid-template-columns: 1fr; } }
+.cam-wrap {
+  position: relative; border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--line); background: #000; aspect-ratio: 4/3;
+}
+.cam-wrap video {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transform: scaleX(-1);
+}
+.cam-overlay {
+  position: absolute; inset: auto 0 0 0; padding: 0.5rem 0.75rem;
+  background: linear-gradient(transparent, rgba(0,0,0,0.75));
+  font-size: 0.85rem; color: #dfe6ff;
+}
+.face-result {
+  background: rgba(0,0,0,0.22); border: 1px solid var(--line);
+  border-radius: 16px; padding: 1rem;
+}
+.face-big {
+  font-size: 1.75rem; font-weight: 800; margin: 0.4rem 0;
+  text-transform: capitalize;
+  background: linear-gradient(90deg, #fff, #cbbfff);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hidden { display: none !important; }
+
+/* ---- Match loading bar (liquid glass) ---- */
+.match-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(5, 8, 16, 0.45);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+.match-overlay.open { display: flex; }
+.match-panel {
+  width: min(420px, calc(100% - 2rem));
+  padding: 1.5rem 1.4rem 1.25rem;
+  border-radius: 22px;
+  text-align: center;
+}
+.glass {
+  background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+}
+.match-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.35rem; }
+.match-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem; }
+.match-bar-track {
+  height: 12px; border-radius: 999px; overflow: hidden;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+}
+.match-bar-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), #5bffc5);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+  border-radius: 999px;
+  transition: width 0.12s linear;
+}
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.match-pct {
+  margin-top: 0.75rem; font-weight: 800; font-size: 1.4rem;
+  letter-spacing: 0.04em;
+}
+
+/* ---- 4:3 Netflix-style linked stack ---- */
+.stack-overlay {
+  position: fixed; inset: 0; z-index: 210;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.stack-overlay.open { display: flex; }
+.stack-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(4, 6, 12, 0.55);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+}
+.stack-close {
+  position: absolute; top: 1rem; right: 1rem; z-index: 5;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.35); color: white; font-size: 1.6rem;
+  cursor: pointer; backdrop-filter: blur(10px);
+}
+.stack-stage {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 0.75rem;
+  width: min(920px, 100%);
+}
+.stack-deck {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 4 / 3;
+  max-height: min(70vh, 560px);
+}
+.stack-card {
+  position: absolute; inset: 0;
+  border-radius: 22px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.16);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+  background: #0c1220;
+  transition: transform 0.35s cubic-bezier(.2,.8,.2,1), opacity 0.35s ease;
+  display: grid; grid-template-columns: 0.9fr 1.1fr;
+}
+@media (max-width: 700px) {
+  .stack-card { grid-template-columns: 1fr; }
+}
+.stack-card.is-behind-1 { transform: scale(0.96) translateY(12px); opacity: 0.55; z-index: 1; pointer-events: none; }
+.stack-card.is-behind-2 { transform: scale(0.92) translateY(24px); opacity: 0.3; z-index: 0; pointer-events: none; }
+.stack-card.is-active { transform: scale(1) translateY(0); opacity: 1; z-index: 3; }
+.stack-card.is-exit-left { transform: scale(0.9) translateX(-120%) rotate(-4deg); opacity: 0; z-index: 4; }
+.stack-card.is-exit-right { transform: scale(0.9) translateX(120%) rotate(4deg); opacity: 0; z-index: 4; }
+.stack-card .sc-poster {
+  width: 100%; height: 100%; object-fit: cover; min-height: 200px;
+  background: linear-gradient(160deg, #243049, #121826);
+}
+.stack-card .sc-body {
+  padding: 1.25rem 1.35rem; display: flex; flex-direction: column; gap: 0.5rem;
+  background: linear-gradient(160deg, rgba(20,27,45,0.95), rgba(10,14,24,0.98));
+  backdrop-filter: blur(8px);
+}
+.stack-card .sc-body h2 { margin: 0; font-size: clamp(1.2rem, 2.5vw, 1.7rem); }
+.stack-match {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-weight: 800; color: #9dffc4;
+  background: rgba(80,220,140,0.12);
+  border: 1px solid rgba(80,220,140,0.28);
+  padding: 0.3rem 0.65rem; border-radius: 999px; width: fit-content;
+  font-size: 0.9rem;
+}
+.stack-match-bar {
+  height: 6px; border-radius: 99px; background: rgba(255,255,255,0.08);
+  overflow: hidden; margin-top: 0.25rem;
+}
+.stack-match-bar > i {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--accent), #5bffc5);
+}
+.stack-nav {
+  z-index: 3; width: 48px; height: 48px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.4); color: white; font-size: 1.8rem;
+  cursor: pointer; backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+.stack-nav:hover { background: rgba(124,92,255,0.35); }
+.stack-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+.stack-meta {
+  position: relative; z-index: 2; margin-top: 1rem; text-align: center;
+}
+.stack-counter { font-weight: 800; font-size: 1.05rem; }
+.stack-hint { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+.sc-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: auto; }
